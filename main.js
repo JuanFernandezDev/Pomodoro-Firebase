@@ -4,6 +4,7 @@ let i = 1
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
 import {
     getFirestore,
     getDocs,
@@ -11,7 +12,7 @@ import {
     doc,
     deleteDoc,
     setDoc,
-    updateDoc
+    updateDoc,
 } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js'
 
 // TODO: Add SDKs for Firebase products that you want to use
@@ -29,6 +30,76 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app)
+const provider = new GoogleAuthProvider()
+
+let currentUser
+
+auth.languageCode = "es"
+
+
+//Comprobamos si ya hay un usuario logueado
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user
+        console.log("Usuario logueado", currentUser.displayName)
+        init()
+        pintarDatos()
+    } else {
+        console.log("No hay usuario logueado")
+    }
+})
+//Inicializamos si ya esta logueado
+function init() {
+    document.getElementById("boton-login").classList.replace("flex", "hidden")
+    document.getElementById("boton-logout").classList.replace("hidden", "flex")
+
+    document.getElementById("user").innerHTML = `
+        <img class = "rounded-full" src="${currentUser.photoURL}" width="24" />
+        <span class = "ml-2 text-white">${currentUser.displayName}</span>
+    `
+}
+//Funcion de login
+async function login() {
+    try {
+        currentUser = await signInWithPopup(auth, provider).then((result) => {
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            const token = credential.accessToken;
+            // The signed-in user info.
+            const user = result.user;
+            document.getElementById("boton-login").classList.replace("flex", "hidden")
+            document.getElementById("boton-logout").classList.replace("hidden", "flex")
+            return user
+        }).catch((error) => {
+            // Handle Errors here.
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            // The email of the user's account used.
+            const email = error.customData.email;
+            // The AuthCredential type that was used.
+            const credential = GoogleAuthProvider.credentialFromError(error);
+            // ...
+        });
+
+    } catch (error) {
+        throw new Error(error)
+    }
+}
+//Funcion de logout
+function logOut() {
+
+    signOut(auth).then(() => {
+        currentUser = ""
+        console.log("LogOut succesful")
+        document.getElementById("user").innerHTML = ""
+        document.getElementById("boton-logout").classList.replace("flex", "hidden")
+        document.getElementById("boton-login").classList.replace("hidden", "flex")
+        document.getElementById("allTask").innerHTML = ""
+    }).catch((error) => {
+        console.log(error)
+    })
+
+}
 
 const db = getFirestore();
 
@@ -37,7 +108,8 @@ let todos = []
 async function getTareas() {
     todos = []
     let ide = i
-    const doc = await getDocs(collection(db, "Tareas"))
+    let colecion = "Tareas-" + currentUser.uid
+    const doc = await getDocs(collection(db, colecion))
     doc.forEach(tareaAu => {
 
         todos.push({
@@ -46,6 +118,8 @@ async function getTareas() {
             textArea: tareaAu.data().textArea,
             completado: tareaAu.data().completado,
             iden: ide,
+            user: currentUser.uid,
+            uname: currentUser.displayName,
         });
         ide++
     });
@@ -71,8 +145,16 @@ function pintarDatos() {
 
 }
 
+function getUUID() {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+        var r = (Math.random() * 16) | 0,
+            v = c == "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
 
-pintarDatos()
+}
+
+
 
 
 
@@ -85,6 +167,9 @@ document.getElementById("deleteTask").addEventListener("click", deleteTask)
 document.getElementById("cancelTask").addEventListener("click", cancelTask)
 document.getElementById("crearTask").addEventListener("click", añadirTask)
 document.getElementById("botonAddEditar").addEventListener("click", añadirTextArea)
+document.getElementById("boton-login").addEventListener("click", login)
+document.getElementById("boton-logout").addEventListener("click", logOut)
+
 
 
 
@@ -101,8 +186,15 @@ function añadirEventsListeners(tareaid) {
 
 async function newTarea(tarea) {
     // Add a new document with a generated id
-    const tareaRef = doc(collection(db, "Tareas"));
-    await setDoc(tareaRef, tarea);
+    let colecion = "Tareas-" + currentUser.uid
+    const tareaRef = doc(collection(db, colecion));
+    await setDoc(tareaRef, tarea).then((result) => {
+        console.log("Succesful la subida")
+    }).catch((error) => {
+        // Handle Errors here.
+        const errorCode = error.code;
+        const errorMessage = error.message;
+    });
 
     // Reset del input
     document.getElementById("allTask").innerHTML = ""
@@ -125,12 +217,19 @@ function añadirTask() {
     if (document.getElementById("numeroEst").value != "") {
         setAux = document.getElementById("numeroEst").value
         tarea.sets = setAux
-    }*/ let areaAux
+    }*/
+    let areaAux
     if (document.getElementById("textArea").value != "") {
         areaAux = document.getElementById("textArea").value
         tarea.textArea = areaAux
     }
     tarea.completado = false
+    tarea.id = getUUID()
+    if (currentUser != "") {
+        tarea.uid = currentUser.uid
+        tarea.uname = currentUser.displayName
+    }
+
     newTarea(tarea)
 }
 

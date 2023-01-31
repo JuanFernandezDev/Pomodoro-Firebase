@@ -2,6 +2,8 @@ let ids = []
 let selected = 0
 let i = 1
 
+import { getUUID } from "./utils.js";
+
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
@@ -128,6 +130,8 @@ async function getTareas() {
 }
 
 function pintarDatos() {
+    ids = []
+    document.getElementById("allTask").innerHTML = ""
     getTareas().then(data => {
         data.forEach((tarea) => {
             if (tarea.textArea != undefined) {
@@ -145,14 +149,7 @@ function pintarDatos() {
 
 }
 
-function getUUID() {
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-        var r = (Math.random() * 16) | 0,
-            v = c == "x" ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-    });
 
-}
 
 
 
@@ -169,6 +166,7 @@ document.getElementById("crearTask").addEventListener("click", añadirTask)
 document.getElementById("botonAddEditar").addEventListener("click", añadirTextArea)
 document.getElementById("boton-login").addEventListener("click", login)
 document.getElementById("boton-logout").addEventListener("click", logOut)
+//document.getElementById("actualizarEdit").addEventListener("click", logOut)
 
 
 
@@ -185,6 +183,7 @@ function añadirEventsListeners(tareaid) {
 
 
 async function newTarea(tarea) {
+    ids = []
     // Add a new document with a generated id
     let colecion = "Tareas-" + currentUser.uid
     const tareaRef = doc(collection(db, colecion));
@@ -245,6 +244,8 @@ function añadirTextArea(event) {
 let openAddTask = false
 
 function añadirTarea() {
+    document.getElementById("saveEdit").classList.replace("hidden", "block")
+    document.getElementById("actualizarEdit").classList.replace("block", "hidden")
     document.getElementById("addTask").setAttribute('class', 'hidden')
     document.getElementById("generarTask").className = "w-full text-[#555555] mt-10"
     openAddTask = true
@@ -304,19 +305,13 @@ function crearTask(titulo, tareaid, textArea) {
     let setAux
     let areaAux
 
-    if (document.getElementById("realTask").value != "") {
-        taskAux = document.getElementById("realTask").value
-    } else {
-        taskAux = titulo
-    }
-    if (document.getElementById("numeroEst").value != "") {
-        setAux = document.getElementById("numeroEst").value
-    } else {
-        setAux = ""
-    }
-    if (document.getElementById("textArea").value != "") {
-        areaAux = document.getElementById("textArea").value
-    } else if (textArea != undefined) {
+    taskAux = titulo
+
+    setAux = 1 //Esto habria que cambiarlo
+
+
+
+    if (textArea != undefined) {
         areaAux = textArea
     } else {
         areaAux = ""
@@ -384,14 +379,8 @@ function crearTask(titulo, tareaid, textArea) {
             </div>`
 
         div.className = "mt-2"
-        document.getElementById("allTask").appendChild(div);
+        document.getElementById("allTask").appendChild(div)
         añadirEventsListeners(tareaid)
-        /*todos.push({
-            id: "tareaAu.id",
-            titulo: taskAux,
-            completado: false,
-            iden: i,
-        });*/
 
         if (ids.length == 0) {
             selected = tareaid;
@@ -408,6 +397,8 @@ function crearTask(titulo, tareaid, textArea) {
 
 function editTask(event) {
     let tareaid = event.target.dataset.tareaid
+    document.getElementById("saveEdit").classList.replace("block", "hidden")
+    document.getElementById("actualizarEdit").classList.replace("hidden", "block")
     document.getElementById("editarTask").className = "w-full text-[#555555] mt-10"
     document.getElementById("flag").innerHTML = tareaid
     document.getElementById(tareaid).className = "hidden"
@@ -455,9 +446,18 @@ function cancelEdit() {
     document.getElementById("textAreaEditar").className = "hidden"
 }
 
+async function deleteTarea(tareaId) {
+    let coleccion = "Tareas-" + currentUser.uid
+    await deleteDoc(doc(db, coleccion, tareaId));
+}
+
+
 function deleteTask() {
 
     document.getElementById(selected).remove()
+
+    console.log("Quiero eliminar: ", selected);
+    deleteTarea(selected);
 
     let cont = 0
     for (const numero of ids) {
@@ -471,6 +471,7 @@ function deleteTask() {
         select2(selected)
     }
     console.log(ids)
+    pintarDatos(); // para actualizar la vista
     cancelEdit()
 }
 
@@ -509,7 +510,6 @@ function select2(tareaid) {
     if (selected == tareaid) {
         console.log(selected)
         document.getElementById(`marco-${selected}`).className = "bg-white border-l-8 border-black rounded-md px-3 py-4 shadow-lg"
-
     }
 
 }

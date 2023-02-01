@@ -3,6 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
 
 
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -20,7 +21,7 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app)
 export const provider = new GoogleAuthProvider()
-export const user = ""
+export const user = {}
 
 //Funcion de login
 export async function login() {
@@ -66,7 +67,4 @@ export function logOut() {
     })
 
 }
-
-//Comprobamos si ya hay un usuario logueado
-
 

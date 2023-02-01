@@ -5,17 +5,10 @@ let i = 1
 import { getUUID } from "./utils.js";
 import { login, logOut, auth, user } from "./auth.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
-import {
-    getFirestore,
-    getDocs,
-    collection,
-    doc,
-    deleteDoc,
-    setDoc,
-    updateDoc,
-} from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js'
+import { getTareas, newTarea, deleteTarea } from "./firestore.js";
 
-let currentUser = user
+
+let currentUser
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -39,42 +32,17 @@ function init() {
         <span class = "ml-2 text-white">${currentUser.displayName}</span>
     `
 }
-const db = getFirestore();
+
 
 let todos = []
 
-async function getTareas() {
-    todos = []
-    let ide = i
-    let colecion = "Tareas-" + currentUser.uid
-    const doc = await getDocs(collection(db, colecion))
-    doc.forEach(tareaAu => {
-
-        todos.push({
-            id: tareaAu.id,
-            titulo: tareaAu.data().titulo,
-            textArea: tareaAu.data().textArea,
-            completado: tareaAu.data().completado,
-            iden: ide,
-            user: currentUser.uid,
-            uname: currentUser.displayName,
-        });
-        ide++
-    });
-
-    return todos
-}
 
 function pintarDatos() {
     ids = []
     document.getElementById("allTask").innerHTML = ""
-    getTareas().then(data => {
+    getTareas(currentUser).then(data => {
         data.forEach((tarea) => {
-            if (tarea.textArea != undefined) {
-                crearTask(tarea.titulo, tarea.id, tarea.textArea)
-            } else {
-                crearTask(tarea.titulo, tarea.id)
-            }
+            crearTask(tarea)
             if (tarea.completado == true) {
                 checkTask2(tarea.id)
             }
@@ -84,12 +52,6 @@ function pintarDatos() {
     })
 
 }
-
-
-
-
-
-
 
 
 //document.getElementById("aumentarEst").addEventListener("click", aumentarEst)
@@ -118,26 +80,6 @@ function añadirEventsListeners(tareaid) {
 }
 
 
-async function newTarea(tarea) {
-    ids = []
-    // Add a new document with a generated id
-    let colecion = "Tareas-" + currentUser.uid
-    const tareaRef = doc(collection(db, colecion));
-    await setDoc(tareaRef, tarea).then((result) => {
-        console.log("Succesful la subida")
-    }).catch((error) => {
-        // Handle Errors here.
-        const errorCode = error.code;
-        const errorMessage = error.message;
-    });
-
-    // Reset del input
-    document.getElementById("allTask").innerHTML = ""
-
-    pintarDatos(); // para actualizar la vista
-}
-
-
 function añadirTask() {
     let taskAux
     let tarea = {}
@@ -147,7 +89,6 @@ function añadirTask() {
         tarea.titulo = taskAux
 
     }
-
     /*let setAux
     if (document.getElementById("numeroEst").value != "") {
         setAux = document.getElementById("numeroEst").value
@@ -164,8 +105,12 @@ function añadirTask() {
         tarea.uid = currentUser.uid
         tarea.uname = currentUser.displayName
     }
-
+    ids = []
     newTarea(tarea)
+    // Reset del input
+    document.getElementById("allTask").innerHTML = ""
+
+    pintarDatos(); // para actualizar la vista
 }
 
 
@@ -235,27 +180,21 @@ function unCheckTask(event) {
 }
 
 
-
-function crearTask(titulo, tareaid, textArea) {
-    let taskAux
+//Funcion para crear las task a raiz del parametro tarea
+function crearTask(tarea) {
+    let taskAux = tarea.titulo
     let setAux
     let areaAux
-
-    taskAux = titulo
+    let tareaid = tarea.id
 
     setAux = 1 //Esto habria que cambiarlo
 
 
-
-    if (textArea != undefined) {
-        areaAux = textArea
-    } else {
-        areaAux = ""
+    //Si no esta vacio lo rellena para que se muestre el campo
+    if (tarea.textArea != undefined) {
+        areaAux = tarea.textArea
     }
 
-    if (ids.length == 0) {
-        i = 1
-    }
     if (taskAux != "") {
         let div = document.createElement("div")
         let text = "hidden"
@@ -330,7 +269,7 @@ function crearTask(titulo, tareaid, textArea) {
     }
 }
 
-
+//Saca el menu para editar la task y permite modificar los campos
 function editTask(event) {
     let tareaid = event.target.dataset.tareaid
     document.getElementById("saveEdit").classList.replace("block", "hidden")
@@ -350,7 +289,7 @@ function editTask(event) {
 }
 
 
-
+//Funcion por manejar todavia
 function saveEdit() {
     let tareaid = document.getElementById("flag").textContent.trim()
     document.getElementById("editarTask").className = "hidden"
@@ -371,6 +310,8 @@ function saveEdit() {
 
 }
 
+
+//Funcion que resetea los valores de la ventana de creacion de las task, y la esconde con hidden
 function cancelEdit() {
     document.getElementById("editarTask").className = "hidden"
     if (document.getElementById(document.getElementById("flag").textContent.trim()) != null)
@@ -382,28 +323,29 @@ function cancelEdit() {
     document.getElementById("textAreaEditar").className = "hidden"
 }
 
-async function deleteTarea(tareaId) {
-    let coleccion = "Tareas-" + currentUser.uid
-    await deleteDoc(doc(db, coleccion, tareaId));
-}
 
 
+//Funcion para eliminar una task
 function deleteTask() {
-
+    //Eliminamos el div de la task
     document.getElementById(selected).remove()
 
     console.log("Quiero eliminar: ", selected);
+    //Llamamos a la funcion de firestore.js para eliminarlo en la base de datos
     deleteTarea(selected);
 
     let cont = 0
+    //Quitamos el valor de la id del array de ids
     for (const numero of ids) {
         if (numero == selected) {
             ids.splice(cont, 1);
         }
         cont++
     }
+
     if (ids.length != 0) {
-        selected = obtenerAleatorio()
+        //Seleccionamos una task para marcarla como seleccionado
+        selected = obtenerAleatorio().id
         select2(selected)
     }
     console.log(ids)
@@ -411,12 +353,17 @@ function deleteTask() {
     cancelEdit()
 }
 
+//Obtener un task aleatoriamente
 function obtenerAleatorio() {
-    let indiceAleatorio = Math.floor(Math.random() * (todos.length - 1));
-    console.log(indiceAleatorio)
-    return ids[indiceAleatorio]
+    //Cogemos un hijo del div donde estan todas las task
+    let div = document.getElementById("allTask")
+    let hijos = div.children;
+    let hijoAleatorio = hijos[Math.floor(Math.random() * hijos.length)];
+
+    return hijoAleatorio
 }
 
+//Funcion de seleccion para cuando selecionamos uno de manera manual
 function select(event) {
     if (event.target != undefined) {
         let tareaid = event.target.dataset.tareaid
@@ -435,6 +382,7 @@ function select(event) {
     }
 }
 
+//Funcion de seleccion para cuando lo asigna el metodo eliminar
 function select2(tareaid) {
 
     if (tareaid != selected) {

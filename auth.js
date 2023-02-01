@@ -32,8 +32,12 @@ export async function login() {
             // The signed-in user info.
             const user = result.user;
             // Quitamos el boton de login y mostramos el de logOut
+            document.getElementById("img-logout").innerHTML = `<img class = "rounded-full mr-2" src="${user.photoURL}" width="17" />`
             document.getElementById("boton-login").classList.replace("flex", "hidden")
             document.getElementById("boton-logout").classList.replace("hidden", "flex")
+            document.getElementById("img-logout2").innerHTML = `<img class = "rounded-full mr-2" src="${user.photoURL}" width="16" />`
+            document.getElementById("boton-login2").classList.replace("flex", "hidden")
+            document.getElementById("boton-logout2").classList.replace("hidden", "flex")
             return user
         }).catch((error) => {
             // Handle Errors here.
@@ -60,6 +64,8 @@ export function logOut() {
         // Quitamos el boton de logout y mostramos el de login.
         document.getElementById("boton-logout").classList.replace("flex", "hidden")
         document.getElementById("boton-login").classList.replace("hidden", "flex")
+        document.getElementById("boton-logout2").classList.replace("flex", "hidden")
+        document.getElementById("boton-login2").classList.replace("hidden", "flex")
         //Borramos las tasks del usuario.
         document.getElementById("allTask").innerHTML = ""
     }).catch((error) => {

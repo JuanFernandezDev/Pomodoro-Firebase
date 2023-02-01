@@ -8,8 +8,9 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.16.0/fi
 import { getTareas, newTarea, deleteTarea } from "./firestore.js";
 
 
-let currentUser
+let currentUser = ""
 
+//Comprueba el estado del usuario cada vez que se refresca la pagina.
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user
@@ -26,17 +27,21 @@ onAuthStateChanged(auth, (user) => {
 function init() {
     document.getElementById("boton-login").classList.replace("flex", "hidden")
     document.getElementById("boton-logout").classList.replace("hidden", "flex")
-
-    document.getElementById("user").innerHTML = `
+    document.getElementById("img-logout").innerHTML = `<img class = "rounded-full mr-2" src="${currentUser.photoURL}" width="24" />`
+    document.getElementById("img-logout2").innerHTML = `<img class = "rounded-full mr-2" src="Img/profile-user.png" width="16" />`
+    document.getElementById("boton-login2").classList.replace("flex", "hidden")
+    document.getElementById("boton-logout2").classList.replace("hidden", "flex")
+    /* document.getElementById("user").innerHTML = 
+    `
         <img class = "rounded-full" src="${currentUser.photoURL}" width="24" />
         <span class = "ml-2 text-white">${currentUser.displayName}</span>
-    `
+    ` */
 }
 
 
 let todos = []
 
-
+//LLama a la funcion getTareas de firestore.js para imprimir las task del user
 function pintarDatos() {
     ids = []
     document.getElementById("allTask").innerHTML = ""
@@ -60,15 +65,19 @@ document.getElementById("saveEdit").addEventListener("click", saveEdit)
 document.getElementById("cancelEdit").addEventListener("click", cancelEdit)
 document.getElementById("deleteTask").addEventListener("click", deleteTask)
 document.getElementById("cancelTask").addEventListener("click", cancelTask)
+document.getElementById("cancelTask").addEventListener("click", cancelTask)
 document.getElementById("crearTask").addEventListener("click", añadirTask)
-document.getElementById("botonAddEditar").addEventListener("click", añadirTextArea)
+document.getElementById("botonAddEditar").addEventListener("click", añadirTextAreaEditar)
+document.getElementById("botonAdd").addEventListener("click", añadirTextArea)
 document.getElementById("boton-login").addEventListener("click", login)
+document.getElementById("boton-login2").addEventListener("click", login)
 document.getElementById("boton-logout").addEventListener("click", logOut)
+document.getElementById("boton-logout2").addEventListener("click", logOut)
 //document.getElementById("actualizarEdit").addEventListener("click", logOut)
 
 
 
-
+//Funcion para añadir los eventListener en los task, que esta se ejecuta cuando se crea una task.
 function añadirEventsListeners(tareaid) {
     let editId = "editTask-" + tareaid
     let selectId = "marco-" + tareaid
@@ -79,8 +88,9 @@ function añadirEventsListeners(tareaid) {
     document.getElementById(checkId).addEventListener("click", checkTask, false);
 }
 
-
+//Crea la tarea con sus datos y llama a pintarDatos(), comprueba si los valores estan vacios, para rellenarlos o no.
 function añadirTask() {
+
     let taskAux
     let tarea = {}
     if (document.getElementById("realTask").value != "") {
@@ -106,34 +116,40 @@ function añadirTask() {
         tarea.uname = currentUser.displayName
     }
     ids = []
-    newTarea(tarea)
-    // Reset del input
-    document.getElementById("allTask").innerHTML = ""
+    if (currentUser != "") {
+        newTarea(tarea)
+        // Reset del input
+        document.getElementById("allTask").innerHTML = ""
 
-    pintarDatos(); // para actualizar la vista
+        pintarDatos(); // para actualizar la vista
+    } else {
+        crearTask(tarea)
+    }
+
 }
 
 
-
-function añadirTextArea(event) {
-    console.log(event.target.id)
+//Añade el cuadro del text area en el formulario, para poder rellenar el text complementario de la task 
+function añadirTextAreaEditar(event) {
     document.getElementById(event.target.id).setAttribute('class', 'hidden')
     document.getElementById("textAreaEditar").className = "mt-3.5 bg-[#EFEFEF] border-none rounded-md"
 
-}
+}// onclick="añadirTextArea(textArea, botonAdd)"
 
-let openAddTask = false
+function añadirTextArea(event) {
+    document.getElementById(event.target.id).classList.replace("block", "hidden")
+    document.getElementById("textArea").classList.replace("hidden", "block")
+
+}
 
 function añadirTarea() {
     document.getElementById("saveEdit").classList.replace("hidden", "block")
     document.getElementById("actualizarEdit").classList.replace("block", "hidden")
-    document.getElementById("addTask").setAttribute('class', 'hidden')
+    document.getElementById("addTask").classList.replace("block", "hidden")
     document.getElementById("generarTask").className = "w-full text-[#555555] mt-10"
-    openAddTask = true
 }
 
 function resetTask() {
-    openAddTask = false
     document.getElementById("realTask").value = ""
     document.getElementById("numeroEst").value = 1
     document.getElementById("textArea").value = ""
@@ -141,12 +157,14 @@ function resetTask() {
 
 function cancelTask() {
     resetTask()
+    document.getElementById("textArea").classList.replace("block", "hidden")
+    document.getElementById("botonAdd").classList.replace("hidden", "block")
     document.getElementById("generarTask").setAttribute('class', 'hidden')
     document.getElementById("addTask").className = "flex text-white items-center justify-center font-semibold rounded-md border border-dashed w-full mt-5 py-4 opacity-60 backdrop-opacity-10 bg-black/20 hover:opacity-70"
 }
 
 
-
+//Marca la task como completada pero se llama desde el html 
 function checkTask(event) {
     let tareaid = event.target.dataset.tareaid
     let checkTaskAux = `checkTask-${tareaid}`
@@ -157,6 +175,7 @@ function checkTask(event) {
     document.getElementById(checkTaskAux).className = "w-8 h-8 bg-[#BA4949] rounded-full flex items-center justify-center hover:opacity-70"
 }
 
+//Marca la task como completada pero desde la funcion pintar datos
 function checkTask2(tareaid) {
     let checkTaskAux = `checkTask-${tareaid}`
     let taskAux = `taskh1-${tareaid}`
@@ -165,13 +184,11 @@ function checkTask2(tareaid) {
     document.getElementById(taskAux).className = "flex line-through opacity-40 text-[#555555] font-bold text-lg ml-3"
     document.getElementById(checkTaskAux).className = "w-8 h-8 bg-[#BA4949] rounded-full flex items-center justify-center hover:opacity-70"
 }
-
+//Desmarca la task como completada
 function unCheckTask(event) {
-    console.log(event.target.dataset.tareaid)
     let tareaid = event.target.dataset.tareaid
     let checkTaskAux = `checkTask-${tareaid}`
     let taskAux = `taskh1-${tareaid}`
-    console.log(tareaid)
     document.getElementById(checkTaskAux).removeEventListener("click", unCheckTask)
     document.getElementById(checkTaskAux).addEventListener("click", checkTask)
     document.getElementById(taskAux).className = "flex text-[#555555] font-bold text-lg ml-3"
@@ -184,7 +201,7 @@ function unCheckTask(event) {
 function crearTask(tarea) {
     let taskAux = tarea.titulo
     let setAux
-    let areaAux
+    let areaAux = ""
     let tareaid = tarea.id
 
     setAux = 1 //Esto habria que cambiarlo
@@ -314,14 +331,14 @@ function saveEdit() {
 //Funcion que resetea los valores de la ventana de creacion de las task, y la esconde con hidden
 function cancelEdit() {
     document.getElementById("editarTask").className = "hidden"
-    if (document.getElementById(document.getElementById("flag").textContent.trim()) != null)
-        document.getElementById(document.getElementById("flag").textContent.trim()).className = "mt-2"
     document.getElementById("taskEditar").value = ""
     //document.getElementById("actEditar").value = ""
     //document.getElementById("estEditar").value = ""
     document.getElementById("textAreaEditar").value = ""
     document.getElementById("textAreaEditar").className = "hidden"
 }
+
+
 
 
 
@@ -366,7 +383,7 @@ function obtenerAleatorio() {
 //Funcion de seleccion para cuando selecionamos uno de manera manual
 function select(event) {
     if (event.target != undefined) {
-        let tareaid = event.target.dataset.tareaid
+        let tareaid = event.target.dataset.tareaid //ID de la task
 
         if (tareaid != selected) {
 

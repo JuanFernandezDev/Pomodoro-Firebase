@@ -1,11 +1,12 @@
 let ids = []
+let tareas = []
 let selected = 0
 let i = 1
 
 import { getUUID } from "./utils.js";
 import { login, logOut, auth, user } from "./auth.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
-import { getTareas, newTarea, deleteTarea } from "./firestore.js";
+import { getTareas, newTarea, deleteTarea, actualizarTarea, eliminarCampo, actualizarCheck } from "./firestore.js";
 
 
 let currentUser = ""
@@ -73,6 +74,7 @@ document.getElementById("boton-login").addEventListener("click", login)
 document.getElementById("boton-login2").addEventListener("click", login)
 document.getElementById("boton-logout").addEventListener("click", logOut)
 document.getElementById("boton-logout2").addEventListener("click", logOut)
+document.getElementById("actualizarEdit").addEventListener("click", actualizar)
 //document.getElementById("actualizarEdit").addEventListener("click", logOut)
 
 
@@ -95,7 +97,6 @@ function añadirTask() {
     let tarea = {}
     if (document.getElementById("realTask").value != "") {
         taskAux = document.getElementById("realTask").value
-        console.log(taskAux)
         tarea.titulo = taskAux
 
     }
@@ -116,6 +117,7 @@ function añadirTask() {
         tarea.uname = currentUser.displayName
     }
     ids = []
+
     if (currentUser != "") {
         newTarea(tarea)
         // Reset del input
@@ -173,6 +175,13 @@ function checkTask(event) {
     document.getElementById(checkTaskAux).addEventListener("click", unCheckTask)
     document.getElementById(taskAux).className = "flex line-through opacity-40 text-[#555555] font-bold text-lg ml-3"
     document.getElementById(checkTaskAux).className = "w-8 h-8 bg-[#BA4949] rounded-full flex items-center justify-center hover:opacity-70"
+    if (currentUser != "") { //Comprobamos si el usuario esta logueado para que no intente actualizar la base de datos
+        tareas.forEach(tareaAux => {
+            if (tareaAux.id === tareaid) {
+                actualizarCheck(tareaAux.id, tareaAux)
+            }
+        });
+    }
 }
 
 //Marca la task como completada pero desde la funcion pintar datos
@@ -194,6 +203,13 @@ function unCheckTask(event) {
     document.getElementById(taskAux).className = "flex text-[#555555] font-bold text-lg ml-3"
     document.getElementById(checkTaskAux).className = "w-8 h-8 bg-[#DFDFDF] rounded-full flex items-center justify-center hover:opacity-70"
 
+    if (currentUser != "") { //Comprobamos si el usuario esta logueado para que no intente actualizar la base de datos
+        tareas.forEach(tareaAux => {
+            if (tareaAux.id === tareaid) {
+                actualizarCheck(tareaAux.id, tareaAux)
+            }
+        });
+    }
 }
 
 
@@ -279,7 +295,7 @@ function crearTask(tarea) {
         }
 
         ids.push(tareaid)
-
+        tareas.push(tarea)
         cancelTask()
 
 
@@ -292,7 +308,6 @@ function editTask(event) {
     document.getElementById("saveEdit").classList.replace("block", "hidden")
     document.getElementById("actualizarEdit").classList.replace("hidden", "block")
     document.getElementById("editarTask").className = "w-full text-[#555555] mt-10"
-    document.getElementById("flag").innerHTML = tareaid
     document.getElementById(tareaid).className = "hidden"
     document.getElementById("taskEditar").value = document.getElementById(`taskh1-${tareaid}`).textContent.trim()
     //document.getElementById("actEditar").value = document.getElementById(`contPo-${num}`).textContent.trim()
@@ -303,28 +318,6 @@ function editTask(event) {
         document.getElementById("botonAddEditar").setAttribute('class', 'hidden')
         document.getElementById("textAreaEditar").value = document.getElementById(`textArea-${tareaid}`).textContent.trim()
     }
-}
-
-
-//Funcion por manejar todavia
-function saveEdit() {
-    let tareaid = document.getElementById("flag").textContent.trim()
-    document.getElementById("editarTask").className = "hidden"
-    document.getElementById(tareaid).className = "mt-2"
-    document.getElementById(`taskh1-${tareaid}`).innerHTML = document.getElementById("taskEditar").value
-    //document.getElementById(`contPo-${num}`).innerHTML = document.getElementById("actEditar").value
-    //document.getElementById(`est-${num}`).innerHTML = document.getElementById("estEditar").value
-
-    if (document.getElementById("textAreaEditar").value != "") {
-        document.getElementById(`textArea-${tareaid}`).className = "rounded-md ml-8 mr-2 px-4 py-2 mt-4 bg-[#FCF8DE] shadow"
-        document.getElementById(`textArea-${tareaid}`).innerHTML = document.getElementById("textAreaEditar").value
-    } else {
-        document.getElementById(`textArea-${tareaid}`).className = "hidden"
-        document.getElementById(`textArea-${tareaid}`).innerHTML = ""
-        document.getElementById("textAreaEditar").setAttribute('class', 'hidden')
-        document.getElementById("botonAddEditar").className = "text-sm text-black opacity-40 hover:opacity-50 font-bold underline mt-3.5 ml-2"
-    }
-
 }
 
 
@@ -365,7 +358,6 @@ function deleteTask() {
         selected = obtenerAleatorio().id
         select2(selected)
     }
-    console.log(ids)
     pintarDatos(); // para actualizar la vista
     cancelEdit()
 }
@@ -386,7 +378,6 @@ function select(event) {
         let tareaid = event.target.dataset.tareaid //ID de la task
 
         if (tareaid != selected) {
-
             document.getElementById(`marco-${selected}`).className = "bg-white border-l-8 border-transparent rounded-md px-3 py-4 shadow-lg"
             selected = tareaid
             document.getElementById(`marco-${selected}`).className = "bg-white border-l-8 border-black rounded-md px-3 py-4 shadow-lg"
@@ -409,8 +400,70 @@ function select2(tareaid) {
     }
 
     if (selected == tareaid) {
-        console.log(selected)
         document.getElementById(`marco-${selected}`).className = "bg-white border-l-8 border-black rounded-md px-3 py-4 shadow-lg"
     }
+
+}
+
+
+function actualizar() {
+    let tareaid = selected
+    let taskAux
+
+    if (currentUser != "") {
+        tareas.forEach(tareaAux => {
+            if (tareaAux.id === tareaid) {
+                if (document.getElementById("taskEditar").value != "") {
+                    taskAux = document.getElementById("taskEditar").value
+                    tareaAux.titulo = taskAux
+
+                }
+                /*let setAux
+                if (document.getElementById("numeroEst").value != "") {
+                    setAux = document.getElementById("numeroEst").value
+                    tarea.sets = setAux
+                }*/
+                let areaAux
+                if (document.getElementById("textAreaEditar").value != "") {
+                    areaAux = document.getElementById("textAreaEditar").value
+                    tareaAux.textArea = areaAux
+                } else {
+                    if (tareaAux.textArea != "") {
+                        eliminarCampo(tareaid, tareaAux)
+                    }
+                    delete tareaAux.textArea
+                }
+
+                ids = []
+                //Mandamos la tarea a actualizar en la base de datos
+                actualizarTarea(tareaid, tareaAux)
+                // Reset del input
+                document.getElementById("allTask").innerHTML = ""
+
+                pintarDatos(); // para actualizar la vista
+            }
+        });
+    } else {
+        document.getElementById("editarTask").className = "hidden"
+        document.getElementById(tareaid).className = "mt-2"
+        document.getElementById(`taskh1-${tareaid}`).innerHTML = document.getElementById("taskEditar").value
+        //document.getElementById(`contPo-${num}`).innerHTML = document.getElementById("actEditar").value
+        //document.getElementById(`est-${num}`).innerHTML = document.getElementById("estEditar").value
+
+        if (document.getElementById("textAreaEditar").value != "") {
+            document.getElementById(`textArea-${tareaid}`).className = "rounded-md ml-8 mr-2 px-4 py-2 mt-4 bg-[#FCF8DE] shadow"
+            document.getElementById(`textArea-${tareaid}`).innerHTML = document.getElementById("textAreaEditar").value
+        } else {
+            document.getElementById(`textArea-${tareaid}`).className = "hidden"
+            document.getElementById(`textArea-${tareaid}`).innerHTML = ""
+            document.getElementById("textAreaEditar").setAttribute('class', 'hidden')
+            document.getElementById("botonAddEditar").className = "text-sm text-black opacity-40 hover:opacity-50 font-bold underline mt-3.5 ml-2"
+        }
+
+    }
+
+
+    cancelEdit()
+
 
 }

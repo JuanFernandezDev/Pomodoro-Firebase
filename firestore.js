@@ -7,6 +7,7 @@ import {
     deleteDoc,
     setDoc,
     updateDoc,
+    deleteField,
 } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-firestore.js"
 
 
@@ -20,7 +21,6 @@ let currentUser
 export async function getTareas(user) {
     todos = []
     currentUser = user
-    let ide = 1
     let coleccion = "Tareas-" + user.uid
     const doc = await getDocs(collection(db, coleccion))
     doc.forEach(tareaAu => {
@@ -30,11 +30,10 @@ export async function getTareas(user) {
             titulo: tareaAu.data().titulo,
             textArea: tareaAu.data().textArea,
             completado: tareaAu.data().completado,
-            iden: ide,
             user: user.uid,
             uname: user.displayName,
         });
-        ide++
+
     });
 
     return todos
@@ -57,4 +56,25 @@ export async function newTarea(tarea) {
 export async function deleteTarea(tareaId) {
     let coleccion = "Tareas-" + currentUser.uid
     await deleteDoc(doc(db, coleccion, tareaId));
+}
+
+
+export async function actualizarTarea(tareaId, tarea) {
+    const tareaRef = doc(db, `Tareas-${currentUser.uid}`, tareaId);
+    await updateDoc(tareaRef, tarea);
+}
+
+export async function eliminarCampo(tareaId, tarea) {
+    const tareaRef = doc(db, `Tareas-${currentUser.uid}`, tareaId);
+    await updateDoc(tareaRef, {
+        textArea: deleteField()
+    });
+}
+
+export async function actualizarCheck(tareaId, tarea) {
+    const tareaRef = doc(db, `Tareas-${currentUser.uid}`, tareaId);
+    await updateDoc(tareaRef, {
+        completado: !tarea.completado
+    });
+    console.log(!tarea.completado)
 }

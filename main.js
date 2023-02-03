@@ -1,7 +1,13 @@
 let ids = []
 let tareas = []
 let selected = 0
-let i = 1
+let interval
+let flagReanudar = 0
+const startElement = document.getElementById("counter")
+let setModo = 1
+let tiempoPomodoro = 1500
+let tiempoShort = 300
+let tiempoLong = 900
 
 import { getUUID } from "./utils.js";
 import { login, logOut, auth, user } from "./auth.js";
@@ -19,6 +25,7 @@ onAuthStateChanged(auth, (user) => {
         init()
         pintarDatos()
     } else {
+        currentUser = ""
         console.log("No hay usuario logueado")
     }
 })
@@ -62,10 +69,8 @@ function pintarDatos() {
 
 //document.getElementById("aumentarEst").addEventListener("click", aumentarEst)
 document.getElementById("addTask").addEventListener("click", añadirTarea)
-document.getElementById("saveEdit").addEventListener("click", saveEdit)
 document.getElementById("cancelEdit").addEventListener("click", cancelEdit)
 document.getElementById("deleteTask").addEventListener("click", deleteTask)
-document.getElementById("cancelTask").addEventListener("click", cancelTask)
 document.getElementById("cancelTask").addEventListener("click", cancelTask)
 document.getElementById("crearTask").addEventListener("click", añadirTask)
 document.getElementById("botonAddEditar").addEventListener("click", añadirTextAreaEditar)
@@ -75,7 +80,15 @@ document.getElementById("boton-login2").addEventListener("click", login)
 document.getElementById("boton-logout").addEventListener("click", logOut)
 document.getElementById("boton-logout2").addEventListener("click", logOut)
 document.getElementById("actualizarEdit").addEventListener("click", actualizar)
-//document.getElementById("actualizarEdit").addEventListener("click", logOut)
+
+document.getElementById("botonPomodoro").addEventListener("click", changePomodoro)
+document.getElementById("botonShort").addEventListener("click", changeShortBreak)
+document.getElementById("botonLong").addEventListener("click", changeLongBreak)
+document.getElementById("start").addEventListener("click", start)
+document.getElementById("pause").addEventListener("click", pauseCounter)
+document.getElementById("img-next").addEventListener("click", next)
+document.getElementById("contadorPomodoro").addEventListener("click", actualizarPomodoros)
+
 
 
 
@@ -92,6 +105,7 @@ function añadirEventsListeners(tareaid) {
 
 //Crea la tarea con sus datos y llama a pintarDatos(), comprueba si los valores estan vacios, para rellenarlos o no.
 function añadirTask() {
+
 
     let taskAux
     let tarea = {}
@@ -117,7 +131,7 @@ function añadirTask() {
         tarea.uname = currentUser.displayName
     }
     ids = []
-
+    console.log(currentUser)
     if (currentUser != "") {
         newTarea(tarea)
         // Reset del input
@@ -134,7 +148,7 @@ function añadirTask() {
 //Añade el cuadro del text area en el formulario, para poder rellenar el text complementario de la task 
 function añadirTextAreaEditar(event) {
     document.getElementById(event.target.id).setAttribute('class', 'hidden')
-    document.getElementById("textAreaEditar").className = "mt-3.5 bg-[#EFEFEF] border-none rounded-md"
+    document.getElementById("textAreaEditar").className = "mt-3.5 bg-[#EFEFEF] border-none rounded-md w-full"
 
 }// onclick="añadirTextArea(textArea, botonAdd)"
 
@@ -162,7 +176,7 @@ function cancelTask() {
     document.getElementById("textArea").classList.replace("block", "hidden")
     document.getElementById("botonAdd").classList.replace("hidden", "block")
     document.getElementById("generarTask").setAttribute('class', 'hidden')
-    document.getElementById("addTask").className = "flex text-white items-center justify-center font-semibold rounded-md border border-dashed w-full mt-5 py-4 opacity-60 backdrop-opacity-10 bg-black/20 hover:opacity-70"
+    document.getElementById("addTask").classList.replace("hidden", "flex")
 }
 
 
@@ -323,12 +337,10 @@ function editTask(event) {
 
 //Funcion que resetea los valores de la ventana de creacion de las task, y la esconde con hidden
 function cancelEdit() {
-    document.getElementById("editarTask").className = "hidden"
-    document.getElementById("taskEditar").value = ""
-    //document.getElementById("actEditar").value = ""
-    //document.getElementById("estEditar").value = ""
-    document.getElementById("textAreaEditar").value = ""
-    document.getElementById("textAreaEditar").className = "hidden"
+    document.getElementById("textAreaEditar").classList.replace("block", "hidden")
+    document.getElementById("editarTask").setAttribute('class', 'hidden')
+    document.getElementById("addTask").classList.replace("hidden", "flex")
+    document.getElementById(selected).classList.replace("hidden", "block")
 }
 
 
@@ -466,4 +478,216 @@ function actualizar() {
     cancelEdit()
 
 
+}
+
+
+function startCounter(counterElement, count) {
+
+    document.getElementById("start").setAttribute('class', 'hidden')
+    document.getElementById("pause-line").className = 'flex flex-row justify-center ';
+    switch (setModo) {
+        case 1:
+            document.getElementById("pause").className = 'text-2xl bg-white text-[#113149] font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6 ';
+            break
+        case 2:
+            document.getElementById("pause").className = 'text-2xl bg-white text-[#BA4949] font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6 ';
+            break
+        case 3:
+            document.getElementById("pause").className = 'text-2xl bg-white text-[#7D53A2] font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6 ';
+            break
+    }
+    interval = setInterval(() => {
+        count--;
+        const minutes = Math.floor(count / 60)
+        let seconds = count % 60
+        seconds = seconds.toString().padStart(2, "0")
+        // console.log(count + "Minutos: " + minutes + "Segundos: " + seconds)
+        counterElement.innerHTML = `${minutes}:${seconds}`
+        if (setModo == 1) {
+            document.title = `${minutes}:${seconds} - Time to focus!`;
+        } else {
+            document.title = `${minutes}:${seconds} - Time for a break!`;
+        }
+        if (count === 0) {
+            clearInterval(interval)
+            next()
+        }
+    }, 1000);
+
+}
+
+function pauseCounter() {
+    flagReanudar = 1
+    document.getElementById("pause-line").setAttribute('class', 'hidden')
+    switch (setModo) {
+        case 1:
+            document.getElementById("start").className = 'text-2xl bg-white text-[#113149] font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6 ';
+            break
+        case 2:
+            document.getElementById("start").className = 'text-2xl bg-white text-[#BA4949] font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6 ';
+            break
+        case 3:
+            document.getElementById("start").className = 'text-2xl bg-white text-[#7D53A2] font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6 ';
+            break
+    }
+    clearInterval(interval)
+}
+
+function resumeCounter() {
+    const counterElement = document.getElementById("counter");
+    const time = counterElement.innerHTML;
+    const minutes = parseInt(time.split(":")[0]);
+    const seconds = parseInt(time.split(":")[1]);
+    const count = minutes * 60 + seconds;
+    startCounter(counterElement, count);
+}
+
+function start() {
+    if (flagReanudar == 0) {
+        switch (setModo) {
+            case 1:
+                startCounter(startElement, tiempoPomodoro)
+                break
+            case 2:
+                startCounter(startElement, tiempoShort)
+                break
+            case 3:
+                startCounter(startElement, tiempoLong)
+                break
+        }
+    } else {
+        resumeCounter()
+    }
+}
+
+function darFormato(counter) {
+    const minutes = Math.floor(counter / 60)
+    let seconds = counter % 60
+    seconds = seconds.toString().padStart(2, "0")
+    startElement.innerHTML = `${minutes}:${seconds}`
+}
+
+function darMinutos(counter) {
+    const minutes = Math.floor(counter / 60)
+    let seconds = counter % 60
+    seconds = seconds.toString().padStart(2, "0")
+    return `${minutes}:${seconds}`
+}
+function changePomodoro() {
+    setModo = 1
+    document.getElementById("botonPomodoro").className = "rounded backdrop-opacity-10 bg-black/20 px-4 py-px font-semibold"
+    document.getElementById("botonLong").className = ""
+    document.getElementById("botonShort").className = ""
+    document.getElementById("start").className = "transition-all duration-300 text-2xl bg-white font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6 text-[#113149]"
+    document.getElementById("pause-line").setAttribute('class', 'hidden')
+    document.title = `${darMinutos(tiempoPomodoro)} - Time to focus!`
+    document.querySelector('#icono').setAttribute('href', 'Img/check-modo-1.png');
+    if (ids.length == 0)
+        document.getElementById('frase').innerHTML = "Time to focus!"
+
+    darFormato(tiempoPomodoro)
+
+    clearInterval(interval)
+
+    document.getElementById("background").className = 'h-screen transition-all duration-300 bg-[#113149]'
+
+}
+
+function changeShortBreak() {
+    setModo = 2
+    document.getElementById("botonPomodoro").className = ""
+    document.getElementById("botonLong").className = ""
+    document.getElementById("botonShort").className = "rounded backdrop-opacity-10 bg-black/20 px-4 py-px font-semibold"
+    document.getElementById("start").className = "transition-all duration-300 text-2xl bg-white font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6 text-[#BA4949]"
+    document.getElementById("pause-line").setAttribute('class', 'hidden')
+    document.title = `${darMinutos(tiempoShort)} - Time for a break!`
+    document.querySelector('#icono').setAttribute('href', 'Img/check-modo-2.png');
+    if (ids.length == 0)
+        document.getElementById('frase').innerHTML = "Time for a break!"
+
+    darFormato(tiempoShort)
+
+    clearInterval(interval)
+
+    document.getElementById("background").className = 'h-screen transition-all duration-300 bg-[#BA4949]'
+
+}
+
+function changeLongBreak() {
+    setModo = 3
+    document.getElementById("botonPomodoro").className = ""
+    document.getElementById("botonLong").className = "rounded backdrop-opacity-10 bg-black/20 px-4 py-px font-semibold"
+    document.getElementById("botonShort").className = ""
+    document.getElementById("start").className = "transition-all duration-300 text-2xl bg-white font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6 text-[#7D53A2]"
+    document.getElementById("pause-line").setAttribute('class', 'hidden')
+    document.title = `${darMinutos(tiempoLong)} - Time for a break!`
+    document.querySelector('#icono').setAttribute('href', 'Img/check-modo-3.png');
+    if (ids.length == 0)
+        document.getElementById('frase').innerHTML = "Time for a break!"
+
+    darFormato(tiempoLong)
+
+    clearInterval(interval)
+
+    document.getElementById("background").className = 'h-screen transition-all duration-300 bg-[#7D53A2]'
+
+}
+
+function startPomodoro() {
+    startCounter(startElement, tiempoPomodoro)
+}
+
+function startShortBreak() {
+    startCounter(startElement, tiempoShort)
+}
+
+function startLongBreak() {
+    startCounter(startElement, tiempoLong)
+}
+
+let longBreakInterval = 3
+let intervalBreak = 0
+let contadorPo = 0;
+
+function aumentarNum() {
+    let aux
+    contadorPo++;
+    document.getElementById("contadorPomodoro").innerHTML = `#${contadorPo}`
+    if (ids.length != 0) {
+        aux = parseInt(document.getElementById(`contPo-${selected}`).textContent.trim(), 10)
+        aux++
+        document.getElementById(`contPo-${selected}`).innerHTML = `${aux}`
+    }
+
+}
+
+function next() {
+    if (intervalBreak == 2 && setModo == 1) {
+        intervalBreak = 0
+        aumentarNum()
+        changeLongBreak()
+    } else if (setModo == 1) {
+        aumentarNum()
+        changeShortBreak()
+    } else if (setModo == 2) {
+        intervalBreak++
+        changePomodoro()
+    } else if (setModo == 3) {
+        changePomodoro()
+    }
+
+}
+
+function aumentarEst() {
+    document.getElementById("numeroEst").value++
+}
+
+function disminuirEst() {
+    if (document.getElementById("numeroEst").value > 1)
+        document.getElementById("numeroEst").value--
+}
+
+
+function actualizarPomodoros() {
+    return confirm('¿Seguro que quieres resetear el contador de pomodoros?');
 }

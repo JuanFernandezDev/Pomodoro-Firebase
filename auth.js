@@ -68,6 +68,8 @@ export function logOut() {
         document.getElementById("boton-login2").classList.replace("hidden", "flex")
         //Borramos las tasks del usuario.
         document.getElementById("allTask").innerHTML = ""
+        const user = undefined
+        return user
     }).catch((error) => {
         console.log(error)
     })

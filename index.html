@@ -19,7 +19,7 @@
       id="icono"
       rel="shortcut icon"
       type="image/png"
-      href="Img/check-modo-1.png"
+      href="Img/check-modo.png"
     />
     <title>PomofiKush</title>
   </head>
@@ -156,7 +156,9 @@
       <div
         class="backdrop-opacity-10 bg-white/10 justify-center items-center w-3/4 mx-auto mt-10 text-white text-center rounded-md"
       >
-        <div class="flex w-8/12 justify-between mx-auto pt-4 font-thin">
+        <div
+          class="flex w-8/12 justify-between text-sm md:text-lg lg:text-xl mx-auto pt-4 font-thin"
+        >
           <button
             id="botonPomodoro"
             class="rounded backdrop-opacity-10 bg-black/20 px-4 py-px font-semibold"
@@ -166,11 +168,13 @@
           <button id="botonShort">Short Break</button>
           <button id="botonLong">Long Break</button>
         </div>
-        <div id="counter" class="my-8 text-9xl font-bold">25:00</div>
+        <div id="counter" class="my-8 text-7xl md:text-9xl font-bold">
+          25:00
+        </div>
 
         <button
           id="start"
-          class="text-2xl bg-white text-[#113149] font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6"
+          class="text-sl md:text-2xl bg-white text-[#113149] font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6"
         >
           START
         </button>
@@ -242,14 +246,13 @@
                 <button
                   id="aumentarEst"
                   class="ml-3 h-8 w-8 flex justify-center items-center rounded-md border shadow-lg opacity-80 hover:opacity-90"
-                  onclick="aumentarEst()"
                 >
                   <!--Añadir eventListener-->
                   <img class="w-3" src="Img/ordenar-arriba.png" alt="" />
                 </button>
                 <button
+                  id="disminuirEst"
                   class="ml-1 h-8 w-8 flex justify-center items-center rounded-md border shadow-lg opacity-80 hover:opacity-90"
-                  onclick="disminuirEst()"
                 >
                   <!--Añadir eventListener-->
                   <img class="w-3" src="Img/ordenar-abajo.png" alt="" />
@@ -327,11 +330,13 @@
                 id="estEditar"
               />
               <button
+                id="aumentarEstEdit"
                 class="ml-3 h-8 w-8 flex justify-center items-center rounded-md border shadow-lg opacity-80 hover:opacity-90"
               >
                 <img class="w-3" src="Img/ordenar-arriba.png" alt="" />
               </button>
               <button
+                id="disminuirEstEdit"
                 class="ml-1 h-8 w-8 flex justify-center items-center rounded-md border shadow-lg opacity-80 hover:opacity-90"
               >
                 <img class="w-3" src="Img/ordenar-abajo.png" alt="" />

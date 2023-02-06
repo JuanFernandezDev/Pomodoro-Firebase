@@ -12,7 +12,7 @@ let tiempoLong = 900
 import { getUUID } from "./utils.js";
 import { login, logOut, auth, user } from "./auth.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
-import { getTareas, newTarea, deleteTarea, actualizarTarea, eliminarCampo, actualizarCheck } from "./firestore.js";
+import { getTareas, newTarea, deleteTarea, actualizarTarea, eliminarCampo, actualizarCheck, actualizarContPo } from "./firestore.js";
 
 
 let currentUser = ""
@@ -88,6 +88,10 @@ document.getElementById("start").addEventListener("click", start)
 document.getElementById("pause").addEventListener("click", pauseCounter)
 document.getElementById("img-next").addEventListener("click", next)
 document.getElementById("contadorPomodoro").addEventListener("click", actualizarPomodoros)
+document.getElementById("aumentarEst").addEventListener("click", aumentarEst)
+document.getElementById("disminuirEst").addEventListener("click", disminuirEst)
+document.getElementById("aumentarEstEdit").addEventListener("click", aumentarEstEdit)
+document.getElementById("disminuirEstEdit").addEventListener("click", disminuirEstEdit)
 
 
 
@@ -114,11 +118,12 @@ function añadirTask() {
         tarea.titulo = taskAux
 
     }
-    /*let setAux
+    let setAux
     if (document.getElementById("numeroEst").value != "") {
         setAux = document.getElementById("numeroEst").value
-        tarea.sets = setAux
-    }*/
+        tarea.estPo = setAux
+        tarea.contPo = 0
+    }
     let areaAux
     if (document.getElementById("textArea").value != "") {
         areaAux = document.getElementById("textArea").value
@@ -163,6 +168,10 @@ function añadirTarea() {
     document.getElementById("actualizarEdit").classList.replace("block", "hidden")
     document.getElementById("addTask").classList.replace("block", "hidden")
     document.getElementById("generarTask").className = "w-full text-[#555555] mt-10"
+    document.getElementById("generarTask").scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
 }
 
 function resetTask() {
@@ -230,11 +239,13 @@ function unCheckTask(event) {
 //Funcion para crear las task a raiz del parametro tarea
 function crearTask(tarea) {
     let taskAux = tarea.titulo
-    let setAux
+    let estPo
+    let contPo
     let areaAux = ""
     let tareaid = tarea.id
 
-    setAux = 1 //Esto habria que cambiarlo
+    estPo = tarea.estPo
+    contPo = tarea.contPo
 
 
     //Si no esta vacio lo rellena para que se muestre el campo
@@ -276,7 +287,7 @@ function crearTask(tarea) {
 
                     <div class="text-[#555555] flex items-center opacity-40" data-tareaid="${tareaid}">
                         <h1 class="text-sm tracking-widest font-bold data-tareaid="${tareaid}"">
-                            <span class="text-lg" id="contPo-${tareaid} data-tareaid="${tareaid}"">0</span>/<span id="est-${tareaid}" >${setAux}</span>
+                            <span class="text-lg" id="contPo-${tareaid}" data-tareaid="${tareaid}">${contPo}</span>/<span id="est-${tareaid}" >${estPo}</span>
                         </h1>
 
                         <div
@@ -322,16 +333,20 @@ function editTask(event) {
     document.getElementById("saveEdit").classList.replace("block", "hidden")
     document.getElementById("actualizarEdit").classList.replace("hidden", "block")
     document.getElementById("editarTask").className = "w-full text-[#555555] mt-10"
-    document.getElementById(tareaid).className = "hidden"
+    document.getElementById(tareaid).classList.add("hidden")
     document.getElementById("taskEditar").value = document.getElementById(`taskh1-${tareaid}`).textContent.trim()
-    //document.getElementById("actEditar").value = document.getElementById(`contPo-${num}`).textContent.trim()
-    //document.getElementById("estEditar").value = document.getElementById(`est-${num}`).textContent.trim()
+    document.getElementById("actEditar").value = document.getElementById(`contPo-${tareaid}`).textContent.trim()
+    document.getElementById("estEditar").value = document.getElementById(`est-${tareaid}`).textContent.trim()
 
     if (document.getElementById(`textArea-${tareaid}`).textContent.trim() != "") {
         document.getElementById("textAreaEditar").className = "mt-3.5 bg-[#EFEFEF] border-none rounded-md"
         document.getElementById("botonAddEditar").setAttribute('class', 'hidden')
         document.getElementById("textAreaEditar").value = document.getElementById(`textArea-${tareaid}`).textContent.trim()
     }
+    document.getElementById("editarTask").scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
 }
 
 
@@ -430,11 +445,18 @@ function actualizar() {
                     tareaAux.titulo = taskAux
 
                 }
-                /*let setAux
-                if (document.getElementById("numeroEst").value != "") {
-                    setAux = document.getElementById("numeroEst").value
-                    tarea.sets = setAux
-                }*/
+                let estPo
+                if (document.getElementById("estEditar").value != "") {
+                    estPo = document.getElementById("estEditar").value
+                    tareaAux.estPo = estPo
+                }
+                let contPo
+                if (document.getElementById("actEditar").value != "") {
+                    contPo = document.getElementById("actEditar").value
+                    tareaAux.contPo = contPo
+                } else {
+                    tareaAux.contPo = 0
+                }
                 let areaAux
                 if (document.getElementById("textAreaEditar").value != "") {
                     areaAux = document.getElementById("textAreaEditar").value
@@ -445,22 +467,21 @@ function actualizar() {
                     }
                     delete tareaAux.textArea
                 }
-
                 ids = []
                 //Mandamos la tarea a actualizar en la base de datos
                 actualizarTarea(tareaid, tareaAux)
-                // Reset del input
-                document.getElementById("allTask").innerHTML = ""
+                cancelEdit()
+                document.getElementById(tareaid).remove() //Borramos la task antigua para poder poner la nueva
+                crearTask(tareaAux)
 
-                pintarDatos(); // para actualizar la vista
             }
         });
     } else {
         document.getElementById("editarTask").className = "hidden"
         document.getElementById(tareaid).className = "mt-2"
         document.getElementById(`taskh1-${tareaid}`).innerHTML = document.getElementById("taskEditar").value
-        //document.getElementById(`contPo-${num}`).innerHTML = document.getElementById("actEditar").value
-        //document.getElementById(`est-${num}`).innerHTML = document.getElementById("estEditar").value
+        document.getElementById(`contPo-${tareaid}`).innerHTML = document.getElementById("actEditar").value
+        document.getElementById(`est-${tareaid}`).innerHTML = document.getElementById("estEditar").value
 
         if (document.getElementById("textAreaEditar").value != "") {
             document.getElementById(`textArea-${tareaid}`).className = "rounded-md ml-8 mr-2 px-4 py-2 mt-4 bg-[#FCF8DE] shadow"
@@ -471,11 +492,11 @@ function actualizar() {
             document.getElementById("textAreaEditar").setAttribute('class', 'hidden')
             document.getElementById("botonAddEditar").className = "text-sm text-black opacity-40 hover:opacity-50 font-bold underline mt-3.5 ml-2"
         }
-
+        cancelEdit()
     }
 
 
-    cancelEdit()
+
 
 
 }
@@ -581,7 +602,7 @@ function changePomodoro() {
     document.getElementById("start").className = "transition-all duration-300 text-2xl bg-white font-bold px-16 py-3 rounded-md shadow-inner shadow-lg mb-6 text-[#113149]"
     document.getElementById("pause-line").setAttribute('class', 'hidden')
     document.title = `${darMinutos(tiempoPomodoro)} - Time to focus!`
-    document.querySelector('#icono').setAttribute('href', 'Img/check-modo-1.png');
+    document.querySelector('#icono').setAttribute('href', 'Img/check-modo.png');
     if (ids.length == 0)
         document.getElementById('frase').innerHTML = "Time to focus!"
 
@@ -653,7 +674,20 @@ function aumentarNum() {
     let aux
     contadorPo++;
     document.getElementById("contadorPomodoro").innerHTML = `#${contadorPo}`
+
+    if (currentUser != "") { //Comprobamos si el usuario esta logueado para que no intente actualizar la base de datos
+        tareas.forEach(tareaAux => {
+            if (tareaAux.id === selected) {
+                tareaAux.contPo = contadorPo
+                //actualizarCheck(tareaAux.id, tareaAux)
+                actualizarContPo(tareaAux.id, tareaAux)
+            }
+        });
+    }
+
     if (ids.length != 0) {
+        console.log(selected)
+        console.log(document.getElementById(`contPo-${selected}`).innerHTML)
         aux = parseInt(document.getElementById(`contPo-${selected}`).textContent.trim(), 10)
         aux++
         document.getElementById(`contPo-${selected}`).innerHTML = `${aux}`
@@ -687,7 +721,20 @@ function disminuirEst() {
         document.getElementById("numeroEst").value--
 }
 
+function aumentarEstEdit() {
+    document.getElementById("estEditar").value++
+}
+
+function disminuirEstEdit() {
+    if (document.getElementById("estEditar").value > 1)
+        document.getElementById("estEditar").value--
+}
+
 
 function actualizarPomodoros() {
-    return confirm('¿Seguro que quieres resetear el contador de pomodoros?');
+    if (currentUser != "") {
+        return confirm('¿Seguro que quieres resetear el contador de pomodoros?');
+    } else {
+        return confirm('¿Seguro que quieres resetear el contador de pomodoros? Perderas las Tasks creadas');
+    }
 }

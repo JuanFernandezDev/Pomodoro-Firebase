@@ -32,6 +32,8 @@ export async function getTareas(user) {
             completado: tareaAu.data().completado,
             user: user.uid,
             uname: user.displayName,
+            contPo: tareaAu.data().contPo,
+            estPo: tareaAu.data().estPo,
         });
 
     });
@@ -77,4 +79,12 @@ export async function actualizarCheck(tareaId, tarea) {
         completado: !tarea.completado
     });
     console.log(!tarea.completado)
+}
+
+export async function actualizarContPo(tareaId, tarea) {
+    const tareaRef = doc(db, `Tareas-${currentUser.uid}`, tareaId);
+    await updateDoc(tareaRef, {
+        contPo: tarea.contPo
+    });
+    console.log(tarea.contPo)
 }

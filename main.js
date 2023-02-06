@@ -473,7 +473,10 @@ function actualizar() {
                 cancelEdit()
                 document.getElementById(tareaid).remove() //Borramos la task antigua para poder poner la nueva
                 crearTask(tareaAux)
-
+                console.log(tareaAux.completado)
+                if (tareaAux.completado) {
+                    checkTask2(tareaAux.id)
+                }
             }
         });
     } else {

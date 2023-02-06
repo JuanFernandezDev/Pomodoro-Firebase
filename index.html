@@ -157,16 +157,16 @@
         class="backdrop-opacity-10 bg-white/10 justify-center items-center w-3/4 mx-auto mt-10 text-white text-center rounded-md"
       >
         <div
-          class="flex w-8/12 justify-between text-sm md:text-lg lg:text-xl mx-auto pt-4 font-thin"
+          class="flex flex-col sm:flex-row w-8/12 justify-between text-sm md:text-lg lg:text-xl mx-auto pt-4 font-thin"
         >
           <button
             id="botonPomodoro"
-            class="rounded backdrop-opacity-10 bg-black/20 px-4 py-px font-semibold"
+            class="rounded backdrop-opacity-10 mt-2 sm:mt-0 bg-black/20 px-4 py-px font-semibold"
           >
             Pomodoro
           </button>
-          <button id="botonShort">Short Break</button>
-          <button id="botonLong">Long Break</button>
+          <button class="mt-2 sm:mt-0" id="botonShort">Short Break</button>
+          <button class="mt-2 sm:mt-0" id="botonLong">Long Break</button>
         </div>
         <div id="counter" class="my-8 text-7xl md:text-9xl font-bold">
           25:00
@@ -247,14 +247,12 @@
                   id="aumentarEst"
                   class="ml-3 h-8 w-8 flex justify-center items-center rounded-md border shadow-lg opacity-80 hover:opacity-90"
                 >
-                  <!--Añadir eventListener-->
                   <img class="w-3" src="Img/ordenar-arriba.png" alt="" />
                 </button>
                 <button
                   id="disminuirEst"
                   class="ml-1 h-8 w-8 flex justify-center items-center rounded-md border shadow-lg opacity-80 hover:opacity-90"
                 >
-                  <!--Añadir eventListener-->
                   <img class="w-3" src="Img/ordenar-abajo.png" alt="" />
                 </button>
               </div>

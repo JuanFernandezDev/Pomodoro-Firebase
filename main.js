@@ -672,13 +672,16 @@ let contadorPo = 0;
 
 function aumentarNum() {
     let aux
-    contadorPo++;
+    contadorPo++
     document.getElementById("contadorPomodoro").innerHTML = `#${contadorPo}`
 
     if (currentUser != "") { //Comprobamos si el usuario esta logueado para que no intente actualizar la base de datos
         tareas.forEach(tareaAux => {
             if (tareaAux.id === selected) {
-                tareaAux.contPo = contadorPo
+
+                pos = parseInt(document.getElementById(`contPo-${selected}`).textContent, 10)
+
+                tareaAux.contPo = ++pos
                 //actualizarCheck(tareaAux.id, tareaAux)
                 actualizarContPo(tareaAux.id, tareaAux)
             }
@@ -686,8 +689,6 @@ function aumentarNum() {
     }
 
     if (ids.length != 0) {
-        console.log(selected)
-        console.log(document.getElementById(`contPo-${selected}`).innerHTML)
         aux = parseInt(document.getElementById(`contPo-${selected}`).textContent.trim(), 10)
         aux++
         document.getElementById(`contPo-${selected}`).innerHTML = `${aux}`

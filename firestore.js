@@ -82,6 +82,7 @@ export async function actualizarCheck(tareaId, tarea) {
 }
 
 export async function actualizarContPo(tareaId, tarea) {
+    console.log("Entro")
     const tareaRef = doc(db, `Tareas-${currentUser.uid}`, tareaId);
     await updateDoc(tareaRef, {
         contPo: tarea.contPo

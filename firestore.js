@@ -76,9 +76,9 @@ export async function eliminarCampo(tareaId, tarea) {
 export async function actualizarCheck(tareaId, tarea) {
     const tareaRef = doc(db, `Tareas-${currentUser.uid}`, tareaId);
     await updateDoc(tareaRef, {
-        completado: !tarea.completado
+        completado: tarea.completado
     });
-    console.log(!tarea.completado)
+    console.log(tarea.completado)
 }
 
 export async function actualizarContPo(tareaId, tarea) {

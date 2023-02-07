@@ -20,6 +20,7 @@ let currentUser = ""
 //Comprueba el estado del usuario cada vez que se refresca la pagina.
 onAuthStateChanged(auth, (user) => {
     if (user) {
+        tareas = []
         currentUser = user
         console.log("Usuario logueado", currentUser.displayName)
         init()
@@ -52,6 +53,7 @@ let todos = []
 //LLama a la funcion getTareas de firestore.js para imprimir las task del user
 function pintarDatos() {
     ids = []
+    tareas = []
     document.getElementById("allTask").innerHTML = ""
     getTareas(currentUser).then(data => {
         data.forEach((tarea) => {
@@ -136,12 +138,11 @@ function añadirTask() {
         tarea.uname = currentUser.displayName
     }
     ids = []
-    console.log(currentUser)
     if (currentUser != "") {
         newTarea(tarea)
         // Reset del input
         document.getElementById("allTask").innerHTML = ""
-
+        tareas = [{}]
         pintarDatos(); // para actualizar la vista
     } else {
         crearTask(tarea)
@@ -201,10 +202,12 @@ function checkTask(event) {
     if (currentUser != "") { //Comprobamos si el usuario esta logueado para que no intente actualizar la base de datos
         tareas.forEach(tareaAux => {
             if (tareaAux.id === tareaid) {
+                tareaAux.completado = true
                 actualizarCheck(tareaAux.id, tareaAux)
             }
         });
     }
+
 }
 
 //Marca la task como completada pero desde la funcion pintar datos
@@ -215,6 +218,7 @@ function checkTask2(tareaid) {
     document.getElementById(checkTaskAux).addEventListener("click", unCheckTask)
     document.getElementById(taskAux).className = "flex line-through opacity-40 text-[#555555] font-bold text-lg ml-3"
     document.getElementById(checkTaskAux).className = "w-8 h-8 bg-[#BA4949] rounded-full flex items-center justify-center hover:opacity-70"
+
 }
 //Desmarca la task como completada
 function unCheckTask(event) {
@@ -227,12 +231,15 @@ function unCheckTask(event) {
     document.getElementById(checkTaskAux).className = "w-8 h-8 bg-[#DFDFDF] rounded-full flex items-center justify-center hover:opacity-70"
 
     if (currentUser != "") { //Comprobamos si el usuario esta logueado para que no intente actualizar la base de datos
+        console.log(tareas)
         tareas.forEach(tareaAux => {
             if (tareaAux.id === tareaid) {
+                tareaAux.completado = false
                 actualizarCheck(tareaAux.id, tareaAux)
             }
         });
     }
+
 }
 
 
@@ -327,6 +334,90 @@ function crearTask(tarea) {
     }
 }
 
+function actualizarTask(tarea) {
+    let taskAux = tarea.titulo
+    let estPo
+    let contPo
+    let areaAux = ""
+    let tareaid = tarea.id
+
+    estPo = tarea.estPo
+    contPo = tarea.contPo
+
+
+    //Si no esta vacio lo rellena para que se muestre el campo
+    if (tarea.textArea != undefined) {
+        areaAux = tarea.textArea
+    }
+
+    if (taskAux != "") {
+        let div = document.createElement("div")
+        let text = "hidden"
+        let borde = "border-l-8 border-transparent hover:border-gray-200"
+        if (areaAux != "") {
+            text = "block"
+        }
+        if (ids.length == 0) {
+            borde = "border-l-8 border-black"
+        }
+
+        div.id = `${tareaid}`
+        div.innerHTML = `
+                <div
+                class="bg-white  ${borde} rounded-md px-3 py-4 shadow-lg"
+                id = "marco-${tareaid}"
+                data-tareaid="${tareaid}"
+            >
+                <div class="flex justify-between" data-tareaid="${tareaid}">
+                    <div class="flex items-center" id="task-${tareaid} data-tareaid="${tareaid}">
+                        <div
+                            class="w-8 h-8 bg-[#DFDFDF] rounded-full flex items-center justify-center hover:opacity-70"                 
+                            id="checkTask-${tareaid}"
+                            data-tareaid="${tareaid}"
+                            >
+                            <img class="w-6" data-tareaid="${tareaid}" src="Img/check-blanco.png" alt="" />
+                        </div>
+                        <h1 id="taskh1-${tareaid}" class="text-[#555555] font-bold text-lg ml-3" data-tareaid="${tareaid}">
+                            ${taskAux}
+                        </h1>
+                    </div>
+
+                    <div class="text-[#555555] flex items-center opacity-40" data-tareaid="${tareaid}">
+                        <h1 class="text-sm tracking-widest font-bold data-tareaid="${tareaid}"">
+                            <span class="text-lg" id="contPo-${tareaid}" data-tareaid="${tareaid}">${contPo}</span>/<span id="est-${tareaid}" >${estPo}</span>
+                        </h1>
+
+                        <div
+                            class="w-8 h-8 border border-[#DFDFDF] ml-3 flex items-center justify-center rounded-md hover:bg-[#DFDFDF]"
+                            id="editTask-${tareaid}" data-tareaid="${tareaid}"
+                        >
+                            <img
+                            class="w-5"
+                            data-tareaid="${tareaid}"
+                            src="Img/boton-de-tres-morron.png"
+                            alt=""
+                            />
+                        </div>
+                    </div>
+                </div> 
+                <div
+                class="rounded-md ml-8 mr-2 px-4 py-2 mt-4 bg-[#FCF8DE] shadow ${text}"
+                id="textArea-${tareaid}" data-tareaid="${tareaid}"
+                >
+                <h1 data-tareaid="${tareaid}">${areaAux}</h1>
+                </div>
+            </div>`
+
+        div.className = "mt-2"
+        document.getElementById("allTask").appendChild(div)
+        añadirEventsListeners(tareaid)
+
+        cancelTask()
+
+
+    }
+}
+
 //Saca el menu para editar la task y permite modificar los campos
 function editTask(event) {
     let tareaid = event.target.dataset.tareaid
@@ -355,38 +446,37 @@ function cancelEdit() {
     document.getElementById("textAreaEditar").classList.replace("block", "hidden")
     document.getElementById("editarTask").setAttribute('class', 'hidden')
     document.getElementById("addTask").classList.replace("hidden", "flex")
-    document.getElementById(selected).classList.replace("hidden", "block")
+    if (tareas.length != 0) {
+        document.getElementById(selected).classList.replace("hidden", "block")
+    }
 }
-
-
 
 
 
 //Funcion para eliminar una task
 function deleteTask() {
     //Eliminamos el div de la task
+
     document.getElementById(selected).remove()
 
     console.log("Quiero eliminar: ", selected);
     //Llamamos a la funcion de firestore.js para eliminarlo en la base de datos
     deleteTarea(selected);
+    let index = tareas.findIndex(function (tareaAux) {
+        return tareaAux.id === selected;
+    });
 
-    let cont = 0
-    //Quitamos el valor de la id del array de ids
-    for (const numero of ids) {
-        if (numero == selected) {
-            ids.splice(cont, 1);
-        }
-        cont++
+    if (index !== -1) {
+        tareas.splice(index, 1);
     }
 
-    if (ids.length != 0) {
+    if (tareas.length != 0) {
         //Seleccionamos una task para marcarla como seleccionado
         selected = obtenerAleatorio().id
         select2(selected)
     }
-    pintarDatos(); // para actualizar la vista
     cancelEdit()
+    pintarDatos(); // para actualizar la vista
 }
 
 //Obtener un task aleatoriamente
@@ -471,12 +561,13 @@ function actualizar() {
                 //Mandamos la tarea a actualizar en la base de datos
                 actualizarTarea(tareaid, tareaAux)
                 cancelEdit()
+
                 document.getElementById(tareaid).remove() //Borramos la task antigua para poder poner la nueva
-                crearTask(tareaAux)
-                console.log(tareaAux.completado)
+                actualizarTask(tareaAux)
                 if (tareaAux.completado) {
                     checkTask2(tareaAux.id)
                 }
+
             }
         });
     } else {
@@ -496,6 +587,7 @@ function actualizar() {
             document.getElementById("botonAddEditar").className = "text-sm text-black opacity-40 hover:opacity-50 font-bold underline mt-3.5 ml-2"
         }
         cancelEdit()
+        console.log(tareas)
     }
 
 
